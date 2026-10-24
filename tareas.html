@@ -147,10 +147,28 @@
     background: linear-gradient(135deg, color-mix(in srgb, var(--papel) 70%, #000) 50%, transparent 50%);
     border-radius: 0 0 6px 0; opacity: 0.35;
   }
+  /* Tinta tipo marcador glitter: degradado metálico + destellos blancos recortados a las letras */
   .st-titulo {
-    font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.12rem; line-height: 1.1;
+    font-family: 'Caveat', cursive; font-weight: 700; font-size: 1.2rem; line-height: 1.1;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word;
+    color: var(--g1);                       /* respaldo y color del tachado */
+    background-image:
+      radial-gradient(circle, rgba(255,255,255,0.8) 0 0.45px, transparent 0.9px),
+      radial-gradient(circle, color-mix(in srgb, var(--g3) 45%, #fff) 0 0.6px, transparent 1.1px),
+      radial-gradient(circle, color-mix(in srgb, var(--g2) 70%, #fff) 0 0.5px, transparent 1px),
+      linear-gradient(110deg, var(--g1) 0%, var(--g2) 25%, var(--g3) 40%, var(--g2) 55%, var(--g1) 75%, var(--g2) 90%, var(--g1) 100%);
+    background-size: 11px 9px, 7px 8px, 9px 13px, 250% 100%;
+    background-position: 0 0, 4px 3px, 2px 7px, 0 0;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0.6px 0 rgba(255,255,255,0.55)) drop-shadow(0 0 1.2px color-mix(in srgb, var(--g3) 60%, transparent));
   }
+  /* El brillo se desliza al pasar el mouse (como inclinar el papel a la luz) */
+  .sticky:hover .st-titulo, .sticky:focus-visible .st-titulo, .fantasma .st-titulo { animation: destello 2.4s linear infinite; }
+  @keyframes destello {
+    to { background-position: 11px 9px, -3px 11px, 11px -6px, -250% 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .st-titulo { animation: none !important; } }
   .st-detalle {
     font-size: 0.66rem; line-height: 1.3; opacity: 0.75;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word;
@@ -284,10 +302,10 @@ function protegerPagina(alEntrar) {
 
 // ---------- Configuración de cuadrantes (paleta sakura) ----------
 const CUADRANTES = {
-  hacer:      { nombre: 'Hacer ahora',  sub: 'Urgente · Importante',       acc: '#e11d48', papel: '#fda4af', tinta: '#4c0519' },
-  planificar: { nombre: 'Planificar',   sub: 'No urgente · Importante',    acc: '#f472b6', papel: '#fbcfe8', tinta: '#500724' },
-  delegar:    { nombre: 'Delegar',      sub: 'Urgente · No importante',    acc: '#fb923c', papel: '#fed7aa', tinta: '#431407' },
-  soltar:     { nombre: 'Soltar',       sub: 'No urgente · No importante', acc: '#c084fc', papel: '#e9d5ff', tinta: '#3b0764' },
+  hacer:      { nombre: 'Hacer ahora',  sub: 'Urgente · Importante',       acc: '#e11d48', papel: '#fda4af', tinta: '#4c0519', glitter: ['#881337', '#e11d48', '#ff6b8b'] },
+  planificar: { nombre: 'Planificar',   sub: 'No urgente · Importante',    acc: '#f472b6', papel: '#fbcfe8', tinta: '#500724', glitter: ['#831843', '#db2777', '#f472b6'] },
+  delegar:    { nombre: 'Delegar',      sub: 'Urgente · No importante',    acc: '#fb923c', papel: '#fed7aa', tinta: '#431407', glitter: ['#7c2d12', '#ea580c', '#f59e0b'] },
+  soltar:     { nombre: 'Soltar',       sub: 'No urgente · No importante', acc: '#c084fc', papel: '#e9d5ff', tinta: '#3b0764', glitter: ['#581c87', '#9333ea', '#c084fc'] },
 };
 const ORDEN = ['hacer', 'planificar', 'delegar', 'soltar'];
 
@@ -340,6 +358,9 @@ function crearSticky(t) {
   el.style.setProperty('--papel', c.papel);
   el.style.setProperty('--tinta', c.tinta);
   el.style.setProperty('--pin', c.acc);
+  el.style.setProperty('--g1', c.glitter[0]);
+  el.style.setProperty('--g2', c.glitter[1]);
+  el.style.setProperty('--g3', c.glitter[2]);
   el.style.left = `calc(${t.x ?? 0.5} * (100% - var(--nw)))`;
   el.style.top  = `calc(${t.y ?? 0.5} * (100% - var(--nh)))`;
   el.style.transform = `rotate(${t.rot || 0}deg)`;
