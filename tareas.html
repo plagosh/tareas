@@ -316,13 +316,14 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
+// Proyecto del hub (tareas, notas, biblioteca) — separado de finanzas.
 const firebaseConfig = {
-  apiKey: "AIzaSyBOQcAM_qUgsr2SiDO4ZJtHSHJP25g0GSA",
-  authDomain: "finanzas-personal-12490.firebaseapp.com",
-  projectId: "finanzas-personal-12490",
-  storageBucket: "finanzas-personal-12490.firebasestorage.app",
-  messagingSenderId: "1062344169400",
-  appId: "1:1062344169400:web:75075634e2d4a416b3614d"
+  apiKey: "AIzaSyC0qxV-1pMZt3Zrhsd2LYP19E8qR5PS8Eo",
+  authDomain: "biblioteca-47ce1.firebaseapp.com",
+  projectId: "biblioteca-47ce1",
+  storageBucket: "biblioteca-47ce1.firebasestorage.app",
+  messagingSenderId: "957996420213",
+  appId: "1:957996420213:web:7a49c2d1238abcb88abc3c"
 };
 
 const app  = initializeApp(firebaseConfig);

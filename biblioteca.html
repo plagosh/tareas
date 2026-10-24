@@ -161,21 +161,11 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; paddi
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-// Ahora vive en el mismo proyecto que tareas y notas, protegida con tu login de Google.
+// Proyecto del hub (tareas, notas, biblioteca) — separado de finanzas.
 const firebaseConfig = {
-  apiKey: "AIzaSyBOQcAM_qUgsr2SiDO4ZJtHSHJP25g0GSA",
-  authDomain: "finanzas-personal-12490.firebaseapp.com",
-  projectId: "finanzas-personal-12490",
-  storageBucket: "finanzas-personal-12490.firebasestorage.app",
-  messagingSenderId: "1062344169400",
-  appId: "1:1062344169400:web:75075634e2d4a416b3614d"
-};
-
-// Proyecto antiguo: solo se lee una vez para copiar tus títulos al proyecto nuevo.
-const CONFIG_ANTIGUA = {
   apiKey: "AIzaSyC0qxV-1pMZt3Zrhsd2LYP19E8qR5PS8Eo",
   authDomain: "biblioteca-47ce1.firebaseapp.com",
   projectId: "biblioteca-47ce1",
@@ -206,29 +196,6 @@ function aviso(msg, ok = false) {
   el.textContent = msg; el.className = 'aviso' + (ok ? ' ok' : ''); el.style.display = 'block';
 }
 
-// Migración única desde el proyecto antiguo (biblioteca-47ce1). Conserva los mismos IDs,
-// así que si se repite no duplica nada. Solo corre si la colección nueva está vacía.
-async function migrarBiblioteca() {
-  try { if (localStorage.getItem('biblioteca_migrada') === '1') return; } catch (e) {}
-  try {
-    const actuales = await getDocs(col);
-    if (actuales.empty) {
-      const dbAntigua = getFirestore(initializeApp(CONFIG_ANTIGUA, 'biblioteca-antigua'));
-      const snap = await getDocs(collection(dbAntigua, 'biblioteca'));
-      const docs = snap.docs;
-      for (let i = 0; i < docs.length; i += 400) {
-        const lote = writeBatch(db);
-        docs.slice(i, i + 400).forEach(d => lote.set(doc(db, 'biblioteca', d.id), d.data()));
-        await lote.commit();
-      }
-      if (docs.length) aviso(`✓ Se copiaron ${docs.length} títulos desde tu biblioteca antigua.`, true);
-    }
-    try { localStorage.setItem('biblioteca_migrada', '1'); } catch (e) {}
-  } catch (e) {
-    console.error(e);
-    aviso('No se pudo copiar la biblioteca antigua (' + (e.code || e.message) + '). Tus títulos siguen intactos en el proyecto viejo; avísame y lo vemos.');
-  }
-}
 
 const bgMap   = { Pelicula:['#3a1a1a','#2a1010'], Libro:['#1a1a3a','#101028'], Serie:['#1a2e1a','#101e10'], Anime:['#2e2010','#1e1408'] };
 const iconMap = { Libro:'📖', Pelicula:'🎬', Serie:'📺', Anime:'✨' };
@@ -392,8 +359,7 @@ document.getElementById('hub-logout').addEventListener('click', async () => {
 });
 
 // Suscripción en tiempo real, solo con sesión válida
-protegerPagina(async () => {
-  await migrarBiblioteca();
+protegerPagina(() => {
   onSnapshot(query(col, orderBy('titulo')), snap => {
     items = snap.docs.map(d => ({ fireId: d.id, ...d.data() }));
     render();
