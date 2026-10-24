@@ -84,6 +84,34 @@
   .chk { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--suave); cursor: pointer; margin-left: auto; user-select: none; }
   .chk input { accent-color: #f472b6; }
 
+
+  /* ---------- Fila superior + tarjeta de inspiración ---------- */
+  .top { display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 14px; margin-bottom: 1rem; align-items: stretch; }
+  .top-izq { display: flex; flex-direction: column; min-width: 0; }
+  .top-izq .toolbar { margin-bottom: 0; margin-top: auto; }
+  .inspira {
+    position: relative; border-radius: 16px; overflow: hidden; min-height: 150px;
+    border: 1px solid var(--borde);
+    background: linear-gradient(135deg, #3b1d34, #1c1622);
+  }
+  .inspira img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1s ease; }
+  .inspira img.visible { opacity: 1; }
+  .ins-capa {
+    position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 0.8rem 0.95rem;
+    background: linear-gradient(to top, rgba(18,16,22,0.88) 0%, rgba(18,16,22,0.4) 55%, rgba(18,16,22,0.08) 100%);
+  }
+  .ins-frase {
+    font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 0.84rem; line-height: 1.4;
+    color: #fdf2f8; text-shadow: 0 1px 5px rgba(0,0,0,0.7);
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .ins-autor { font-size: 0.66rem; color: #fbcfe8; margin-top: 3px; letter-spacing: 0.04em; }
+  .ins-pie { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 7px; font-size: 0.58rem; color: rgba(255,255,255,0.6); }
+  .ins-pie #ins-lugar { text-transform: uppercase; letter-spacing: 0.09em; }
+  .ins-pie a { color: inherit; text-decoration: none; }
+  .ins-pie a:hover { color: #fbcfe8; }
+
   /* ---------- Matriz ---------- */
   .matriz { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .board {
@@ -213,6 +241,10 @@
 
   .ayuda { font-size: 0.7rem; color: #6b5a6a; margin-top: 0.8rem; text-align: center; }
 
+  @media (max-width: 900px) {
+    .top { grid-template-columns: 1fr; }
+    .inspira { min-height: 140px; }
+  }
   @media (max-width: 760px) {
     :root { --nw: 120px; --nh: 110px; }
     body { padding: 1rem; }
@@ -227,13 +259,14 @@
 </head>
 <body>
 
+<div class="top">
+<div class="top-izq">
 <div class="header">
   <div class="titulo">📌 Tareas</div>
   <div class="nav">
-    <a href="https://finanzas.corabell.app/dashboard">Dashboard</a>
-    <a href="https://finanzas.corabell.app/gastos">Gastos</a>
-    <a href="https://finanzas.corabell.app/finanzas">Finanzas</a>
-    <span class="actual">Tareas</span>
+    <span class="actual">📌 Tareas</span>
+    <a href="notas.html">🗒️ Notas</a>
+    <a href="biblioteca.html">📚 Biblioteca</a>
     <button class="btn-logout" id="btn-logout">Cerrar sesión</button>
   </div>
 </div>
@@ -245,6 +278,16 @@
   <input class="inp inp-fecha" id="inp-fecha" type="date" title="Fecha límite (opcional)"/>
   <button class="btn-fijar" id="btn-fijar">📌 Fijar</button>
   <label class="chk"><input type="checkbox" id="chk-ocultar"/> Ocultar hechas</label>
+</div>
+</div>
+<aside class="inspira" id="inspira" aria-label="Paisaje y frase del día">
+  <img id="ins-foto" alt=""/>
+  <div class="ins-capa">
+    <p class="ins-frase" id="ins-frase"></p>
+    <p class="ins-autor" id="ins-autor"></p>
+    <div class="ins-pie"><span id="ins-lugar"></span><span id="ins-credito"></span></div>
+  </div>
+</aside>
 </div>
 
 <div class="matriz" id="matriz"></div>
@@ -612,6 +655,112 @@ function suscribir() {
       : 'Sin conexión: ' + err.message, 'err');
   });
 }
+
+
+// ---------- Paisaje y frase del día ----------
+const FRASES = [
+  ["No tienes que ser perfecta para comenzar, pero tienes que comenzar para ser perfecta.", "Karen Lamb"],
+  ["El éxito no es la clave de la felicidad. La felicidad es la clave del éxito.", "Albert Schweitzer"],
+  ["Haz lo que puedas, con lo que tienes, donde estás.", "Theodore Roosevelt"],
+  ["La única forma de hacer un gran trabajo es amar lo que haces.", "Steve Jobs"],
+  ["No esperes el momento perfecto. Toma el momento y hazlo perfecto.", "Zoey Sayward"],
+  ["Cada día es una nueva oportunidad para cambiar tu vida.", "Anónimo"],
+  ["El coraje no es la ausencia de miedo, sino el juicio de que algo es más importante que el miedo.", "Ambrose Redmoon"],
+  ["Muévete como si todo fuera a salir bien. Porque así será.", "Anónimo"],
+  ["La disciplina es el puente entre las metas y los logros.", "Jim Rohn"],
+  ["Empieza donde estás. Usa lo que tienes. Haz lo que puedas.", "Arthur Ashe"],
+  ["El futuro pertenece a quienes creen en la belleza de sus sueños.", "Eleanor Roosevelt"],
+  ["Una pequeña acción hoy vale más que mil planes perfectos para mañana.", "Anónimo"],
+  ["No cuentes los días, haz que los días cuenten.", "Muhammad Ali"],
+  ["El único límite es el que tú misma te pones.", "Anónimo"],
+  ["Transforma el obstáculo en oportunidad.", "Marco Aurelio"],
+  ["Lo que no te desafía, no te cambia.", "Fred DeVito"],
+  ["Sé el cambio que quieres ver en el mundo.", "Mahatma Gandhi"],
+  ["Si puedes soñarlo, puedes hacerlo.", "Walt Disney"],
+  ["No hay atajos para ningún lugar que valga la pena ir.", "Beverly Sills"],
+  ["El secreto de salir adelante es comenzar.", "Mark Twain"],
+  ["La perseverancia es el trabajo duro que haces después de cansarte del trabajo duro.", "Newt Gingrich"],
+  ["Cae siete veces, levántate ocho.", "Proverbio japonés"],
+  ["Lo que siembras en esfuerzo, lo cosechas en resultados.", "Anónimo"],
+  ["El progreso, no la perfección.", "Kathy Freston"],
+  ["Tus limitaciones solo existen en tu mente.", "Anónimo"],
+  ["Actúa como si lo que haces marcara la diferencia. Lo marca.", "William James"],
+  ["La vida no se trata de encontrarte a ti misma, sino de crearte.", "George Bernard Shaw"],
+  ["Creer en ti misma es el primer secreto del éxito.", "Ralph Waldo Emerson"],
+  ["Un día a la vez. Un paso a la vez.", "Anónimo"],
+  ["Las grandes cosas nunca vienen de las zonas de confort.", "Neil Strauss"],
+  ["La energía y la persistencia conquistan todas las cosas.", "Benjamin Franklin"],
+  ["Hazlo con pasión o no lo hagas.", "Rosa Nouchette Carey"],
+  ["El aprendizaje nunca agota la mente.", "Leonardo da Vinci"],
+  ["No pienses en cuánto falta. Piensa en cuánto has avanzado.", "Anónimo"],
+  ["El éxito es la suma de pequeños esfuerzos repetidos día tras día.", "Robert Collier"],
+  ["Confía en el proceso.", "Anónimo"],
+  ["La constancia es la virtud por la que todas las otras virtudes dan fruto.", "Evelyn Underhill"],
+];
+const LUGARES = [
+  ['patagonia chile landscape','Patagonia','Chile'], ['santorini greece','Santorini','Grecia'],
+  ['machu picchu peru','Machu Picchu','Perú'], ['kyoto japan temple','Kioto','Japón'],
+  ['amalfi coast italy','Costa Amalfi','Italia'], ['aurora borealis iceland','Aurora Boreal','Islandia'],
+  ['grand canyon usa','Gran Cañón','Estados Unidos'], ['sahara desert morocco','Desierto del Sahara','Marruecos'],
+  ['maldives ocean','Maldivas','Maldivas'], ['banff national park canada','Parque Nacional Banff','Canadá'],
+  ['rio de janeiro brazil','Río de Janeiro','Brasil'], ['hallstatt austria','Hallstatt','Austria'],
+  ['torres del paine chile','Torres del Paine','Chile'], ['bali temple indonesia','Bali','Indonesia'],
+  ['colosseum rome italy','Roma','Italia'], ['new zealand fiordland','Fiordland','Nueva Zelanda'],
+  ['venice canal italy','Venecia','Italia'], ['atacama desert chile','Desierto de Atacama','Chile'],
+  ['paris eiffel tower','París','Francia'], ['amazon rainforest brazil','Amazonas','Brasil'],
+  ['cape town south africa','Ciudad del Cabo','Sudáfrica'], ['swiss alps mountain','Alpes Suizos','Suiza'],
+  ['angkor wat cambodia','Angkor Wat','Camboya'], ['valparaiso chile','Valparaíso','Chile'],
+  ['northern lights norway','Lofoten','Noruega'], ['budapest hungary night','Budapest','Hungría'],
+  ['zhangjiajie china mountain','Zhangjiajie','China'], ['patagonia argentina lake','Bariloche','Argentina'],
+  ['lisbon portugal city','Lisboa','Portugal'], ['lake baikal russia','Lago Baikal','Rusia'],
+  ['dubrovnik croatia','Dubrovnik','Croacia'], ['uluru australia','Uluru','Australia'],
+  ['plitvice lakes croatia','Lagos de Plitvice','Croacia'], ['taj mahal india','Taj Mahal','India'],
+  ['galapagos islands ecuador','Islas Galápagos','Ecuador'], ['copenhagen denmark','Copenhague','Dinamarca'],
+  ['easter island chile','Isla de Pascua','Chile'],
+];
+const UNSPLASH_KEY = 'akvWKEesAv1t1lsEIZSc6AL7MfTkGTn9YD5o7cUdoDU';
+
+function indiceDelDia(n) { const h = new Date(); return (h.getFullYear() * 365 + h.getMonth() * 31 + h.getDate()) % n; }
+
+function mostrarPaisaje(info) {
+  const img = $('ins-foto');
+  img.onload = () => img.classList.add('visible');
+  img.src = info.url;
+  img.alt = $('ins-lugar').textContent;
+  const cred = $('ins-credito');
+  cred.textContent = '';
+  const a = document.createElement('a');
+  a.href = info.perfil + '?utm_source=tareas_corabell&utm_medium=referral';
+  a.target = '_blank'; a.rel = 'noopener';
+  a.textContent = `📷 ${info.autor} / Unsplash`;
+  cred.appendChild(a);
+}
+
+function cargarInspiracion() {
+  const [texto, autor] = FRASES[indiceDelDia(FRASES.length)];
+  $('ins-frase').textContent = `“${texto}”`;
+  $('ins-autor').textContent = `— ${autor}`;
+  $('ins-frase').title = texto;
+
+  const [q, lugar, pais] = LUGARES[indiceDelDia(LUGARES.length)];
+  $('ins-lugar').textContent = `${lugar} · ${pais}`;
+
+  // Una sola foto por día: se guarda para no gastar la cuota de Unsplash en cada recarga
+  const hoy = hoyISO();
+  let cache = null;
+  try { cache = JSON.parse(localStorage.getItem('tareas_paisaje') || 'null'); } catch (e) {}
+  if (cache && cache.dia === hoy && cache.q === q) { mostrarPaisaje(cache); return; }
+
+  fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(q)}&orientation=landscape&client_id=${UNSPLASH_KEY}`)
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(d => {
+      const info = { dia: hoy, q, url: d.urls.raw + '&w=800&q=75&fit=crop', autor: d.user.name, perfil: d.user.links.html };
+      try { localStorage.setItem('tareas_paisaje', JSON.stringify(info)); } catch (e) {}
+      mostrarPaisaje(info);
+    })
+    .catch(err => console.warn('Paisaje no disponible:', err));   // queda el fondo degradado con la frase
+}
+cargarInspiracion();
 
 render();
 protegerPagina(suscribir);

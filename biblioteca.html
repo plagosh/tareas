@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biblioteca Personal</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; padding:1rem; background:#121016; min-height:100vh; }
+.filtros { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1.2rem; }
+.filtro { border:none; border-radius:20px; padding:5px 14px; font-size:0.75rem; font-weight:500; cursor:pointer; transition:all 0.2s; font-family:inherit; background:#2a2a2a; color:#888; }
+.filtro.activo.f-todos    { background:#f0e8f8; color:#7a4a8a; }
+.filtro.activo.f-libro    { background:#e8f0fd; color:#2a5aa0; }
+.filtro.activo.f-pelicula { background:#fde8e8; color:#a03030; }
+.filtro.activo.f-serie    { background:#e8f8ee; color:#2a7a50; }
+.filtro.activo.f-anime    { background:#fdf4e8; color:#8a5a20; }
+.filtro.activo.f-pendiente{ background:#fdf8e0; color:#7a6a10; }
+.filtro.activo.f-terminado{ background:#e8f8e8; color:#2a6a2a; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(125px,1fr)); gap:12px; }
+.card { border-radius:16px; overflow:hidden; background:#2a2a2a; border:0.5px solid #333; transition:transform 0.2s, box-shadow 0.2s; position:relative; }
+.card:hover { transform:translateY(-3px); box-shadow:0 6px 20px rgba(0,0,0,0.3); }
+.poster { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; }
+.poster-placeholder { width:100%; aspect-ratio:2/3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:11px; color:#666; }
+.card-info { padding:8px 10px 6px; }
+.card-titulo { font-size:0.75rem; font-weight:500; color:#e0e0e0; line-height:1.3; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+.badge { font-size:0.62rem; font-weight:600; padding:2px 7px; border-radius:10px; }
+.b-pelicula { background:#fde8e8; color:#a03030; }
+.b-libro    { background:#e8f0fd; color:#3060b0; }
+.b-serie    { background:#e8f8ee; color:#207050; }
+.b-anime    { background:#fdf4e8; color:#8a5020; }
+
+/* Estrellas interactivas */
+.stars-row { display:flex; gap:2px; margin-bottom:4px; }
+.star { font-size:0.85rem; cursor:pointer; color:#555; transition:color 0.15s; line-height:1; }
+.star.on { color:#f0c840; }
+.star:hover { color:#f0c840; }
+
+/* Acciones */
+.card-actions { display:flex; gap:4px; background:none; }
+.btn-estado { flex:1; font-size:0.6rem; font-weight:600; border:none; border-radius:6px; padding:3px 0; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.btn-edit { background:none; color:#555; display:flex; align-items:center; justify-content:center; padding:2px; border-radius:4px; }
+.btn-edit:hover { color:#a0a0f0; }
+.btn-del { position:absolute; bottom:8px; right:8px; background:none; color:#444; font-size:0.9rem; border:none; cursor:pointer; transition:all 0.2s; line-height:1; padding:2px; }
+.btn-del:hover { color:#e07070; }
+
+/* Dot estado */
+.estado-dot { position:absolute; top:8px; right:8px; width:9px; height:9px; border-radius:50%; border:1.5px solid rgba(255,255,255,0.6); cursor:pointer; transition:transform 0.2s; }
+.estado-dot:hover { transform:scale(1.4); }
+.d-pendiente { background:#e07070; }
+.d-en-curso  { background:#f0c840; }
+.d-terminado { background:#50c878; }
+
+/* Card agregar */
+.card-add { border-radius:16px; aspect-ratio:2/3; border:1.5px dashed #3a3a3a; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; color:#555; font-size:0.72rem; cursor:pointer; background:transparent; transition:all 0.2s; font-family:inherit; width:100%; }
+.card-add:hover { border-color:#666; color:#aaa; }
+
+/* Leyenda */
+.leyenda { display:flex; gap:12px; margin-top:1rem; flex-wrap:wrap; }
+.leyenda-item { display:flex; align-items:center; gap:4px; font-size:0.65rem; color:#666; }
+.leyenda-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+/* Modal */
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:center; justify-content:center; }
+.modal-bg.open { display:flex; }
+.modal { background:#242424; border-radius:20px; padding:1.5rem; width:90%; max-width:360px; box-shadow:0 12px 40px rgba(0,0,0,0.4); }
+.modal h3 { font-size:0.9rem; font-weight:600; color:#e0e0e0; margin-bottom:1rem; }
+.modal-campos { display:flex; flex-direction:column; gap:8px; margin-bottom:1rem; }
+.inp { width:100%; background:#2e2e2e; border:1px solid #3a3a3a; border-radius:10px; padding:8px 12px; font-size:0.82rem; font-family:inherit; color:#e0e0e0; outline:none; }
+.inp:focus { border-color:#a080c0; }
+.sel { appearance:none; cursor:pointer; }
+.modal-btns { display:flex; gap:8px; }
+.btn-guardar { flex:1; background:#7a5a9a; border:none; border-radius:10px; color:#fff; font-size:0.85rem; font-weight:600; padding:8px; cursor:pointer; font-family:inherit; }
+.btn-guardar:hover { background:#8a6aaa; }
+.btn-cancelar { background:#333; border:none; border-radius:10px; color:#aaa; font-size:0.85rem; padding:8px 16px; cursor:pointer; font-family:inherit; }
+
+  /* ---------- Navegación del hub (igual que tareas) ---------- */
+  .hub-nav {
+    position: relative; z-index: 5;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    background: rgba(28, 22, 34, 0.65); border: 1px solid rgba(244, 114, 182, 0.15);
+    border-radius: 16px; padding: 0.7rem 1rem; margin-bottom: 1rem;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .hub-nav a, .hub-nav span {
+    font-size: 0.8rem; font-weight: 600; text-decoration: none; padding: 5px 12px; border-radius: 8px;
+    color: #fdf2f8; background: rgba(45, 30, 48, 0.7); border: 1px solid rgba(244, 114, 182, 0.25);
+  }
+  .hub-nav a:hover { background: rgba(244, 114, 182, 0.2); }
+  .hub-nav span.actual { background: linear-gradient(135deg, #f472b6, #db2777); border-color: transparent; color: #fff; }
+  .hub-nav button {
+    margin-left: auto; background: rgba(251, 113, 133, 0.12); border: 1px solid rgba(251, 113, 133, 0.35);
+    border-radius: 8px; color: #fda4af; font-size: 0.8rem; padding: 5px 12px; cursor: pointer; font-weight: 600; font-family: inherit;
+  }
+  .aviso { font-size: 0.72rem; color: #fda4af; background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.3); border-radius: 10px; padding: 0.5rem 0.8rem; margin-bottom: 1rem; display: none; }
+  .aviso.ok { color: #fbcfe8; background: rgba(244,114,182,0.1); border-color: rgba(244,114,182,0.3); }
+</style>
+</head>
+<body>
+<nav class="hub-nav">
+  <a href="tareas.html">📌 Tareas</a>
+  <a href="notas.html">🗒️ Notas</a>
+  <span class="actual">📚 Biblioteca</span>
+  <button id="hub-logout">Cerrar sesión</button>
+</nav>
+<div class="aviso" id="aviso"></div>
+
+<div class="filtros" id="filtros">
+  <button class="filtro f-todos activo" data-f="todos">Todos</button>
+  <button class="filtro f-libro"        data-f="Libro">Libros</button>
+  <button class="filtro f-pelicula"     data-f="Pelicula">Películas</button>
+  <button class="filtro f-serie"        data-f="Serie">Series</button>
+  <button class="filtro f-anime"        data-f="Anime">Anime</button>
+  <button class="filtro f-pendiente"    data-f="Pendiente">Pendiente</button>
+  <button class="filtro f-terminado"    data-f="Terminado">Terminado</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="leyenda">
+  <div class="leyenda-item"><div class="leyenda-dot" style="background:#e07070"></div>Pendiente</div>
+  <div class="leyenda-item"><div class="leyenda-dot" style="background:#f0c840"></div>En curso</div>
+  <div class="leyenda-item"><div class="leyenda-dot" style="background:#50c878"></div>Terminado</div>
+</div>
+
+<!-- Modal agregar/editar -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="modal-titulo-h">Agregar título</h3>
+    <div class="modal-campos">
+      <input  class="inp"      id="m-titulo"  placeholder="Título"/>
+      <input  class="inp"      id="m-portada" placeholder="URL de portada (opcional)"/>
+      <select class="inp sel"  id="m-tipo">
+        <option value="Pelicula">Película</option>
+        <option value="Libro">Libro</option>
+        <option value="Serie">Serie</option>
+        <option value="Anime">Anime</option>
+      </select>
+      <select class="inp sel"  id="m-estado">
+        <option value="Pendiente">Pendiente</option>
+        <option value="En curso">En curso</option>
+        <option value="Terminado">Terminado</option>
+      </select>
+      <select class="inp sel"  id="m-stars">
+        <option value="">Sin calificación</option>
+        <option value="1">★☆☆☆☆</option>
+        <option value="2">★★☆☆☆</option>
+        <option value="3">★★★☆☆</option>
+        <option value="4">★★★★☆</option>
+        <option value="5">★★★★★</option>
+      </select>
+      <input  class="inp"      id="m-notas"   placeholder="Notas (opcional)"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" id="btn-cancelar">Cancelar</button>
+      <button class="btn-guardar"  id="btn-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+// Ahora vive en el mismo proyecto que tareas y notas, protegida con tu login de Google.
+const firebaseConfig = {
+  apiKey: "AIzaSyBOQcAM_qUgsr2SiDO4ZJtHSHJP25g0GSA",
+  authDomain: "finanzas-personal-12490.firebaseapp.com",
+  projectId: "finanzas-personal-12490",
+  storageBucket: "finanzas-personal-12490.firebasestorage.app",
+  messagingSenderId: "1062344169400",
+  appId: "1:1062344169400:web:75075634e2d4a416b3614d"
+};
+
+// Proyecto antiguo: solo se lee una vez para copiar tus títulos al proyecto nuevo.
+const CONFIG_ANTIGUA = {
+  apiKey: "AIzaSyC0qxV-1pMZt3Zrhsd2LYP19E8qR5PS8Eo",
+  authDomain: "biblioteca-47ce1.firebaseapp.com",
+  projectId: "biblioteca-47ce1",
+  storageBucket: "biblioteca-47ce1.firebasestorage.app",
+  messagingSenderId: "957996420213",
+  appId: "1:957996420213:web:7a49c2d1238abcb88abc3c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const col = collection(db, 'biblioteca');
+
+const ALLOWED_EMAIL = 'plagosh1@gmail.com';
+function protegerPagina(alEntrar) {
+  let iniciado = false;
+  onAuthStateChanged(getAuth(app), async user => {
+    if (user && user.email === ALLOWED_EMAIL) {
+      if (!iniciado) { iniciado = true; alEntrar(); }
+    } else {
+      if (user) { try { await signOut(getAuth(app)); } catch (e) {} }
+      window.location.href = 'index.html';
+    }
+  });
+}
+
+function aviso(msg, ok = false) {
+  const el = document.getElementById('aviso');
+  el.textContent = msg; el.className = 'aviso' + (ok ? ' ok' : ''); el.style.display = 'block';
+}
+
+// Migración única desde el proyecto antiguo (biblioteca-47ce1). Conserva los mismos IDs,
+// así que si se repite no duplica nada. Solo corre si la colección nueva está vacía.
+async function migrarBiblioteca() {
+  try { if (localStorage.getItem('biblioteca_migrada') === '1') return; } catch (e) {}
+  try {
+    const actuales = await getDocs(col);
+    if (actuales.empty) {
+      const dbAntigua = getFirestore(initializeApp(CONFIG_ANTIGUA, 'biblioteca-antigua'));
+      const snap = await getDocs(collection(dbAntigua, 'biblioteca'));
+      const docs = snap.docs;
+      for (let i = 0; i < docs.length; i += 400) {
+        const lote = writeBatch(db);
+        docs.slice(i, i + 400).forEach(d => lote.set(doc(db, 'biblioteca', d.id), d.data()));
+        await lote.commit();
+      }
+      if (docs.length) aviso(`✓ Se copiaron ${docs.length} títulos desde tu biblioteca antigua.`, true);
+    }
+    try { localStorage.setItem('biblioteca_migrada', '1'); } catch (e) {}
+  } catch (e) {
+    console.error(e);
+    aviso('No se pudo copiar la biblioteca antigua (' + (e.code || e.message) + '). Tus títulos siguen intactos en el proyecto viejo; avísame y lo vemos.');
+  }
+}
+
+const bgMap   = { Pelicula:['#3a1a1a','#2a1010'], Libro:['#1a1a3a','#101028'], Serie:['#1a2e1a','#101e10'], Anime:['#2e2010','#1e1408'] };
+const iconMap = { Libro:'📖', Pelicula:'🎬', Serie:'📺', Anime:'✨' };
+const ESTADOS = ['Pendiente','En curso','Terminado'];
+
+let filtro = 'todos';
+let editIdx = null;
+let items = [];
+
+function estadoClass(e) { return e==='Pendiente'?'d-pendiente':e==='En curso'?'d-en-curso':'d-terminado'; }
+function starsHtml(n, idx) {
+  return [1,2,3,4,5].map(s =>
+    `<span class="star ${s<=n?'on':''}" data-idx="${idx}" data-s="${s}">★</span>`
+  ).join('');
+}
+
+// Filtros
+document.getElementById('filtros').addEventListener('click', e => {
+  const btn = e.target.closest('.filtro');
+  if (!btn) return;
+  filtro = btn.dataset.f;
+  document.querySelectorAll('.filtro').forEach(b => b.classList.remove('activo'));
+  btn.classList.add('activo');
+  render();
+});
+
+// Estrellas — delegación en el grid
+document.getElementById('grid').addEventListener('click', e => {
+  // Estrellas
+  const star    = e.target.closest('.star');
+  const dot     = e.target.closest('.estado-dot');
+  const btnEdit = e.target.closest('.btn-edit');
+  const btnDel  = e.target.closest('.btn-del');
+
+  if (star) {
+    e.stopPropagation();
+    const idx = parseInt(star.dataset.idx);
+    const s   = parseInt(star.dataset.s);
+    items[idx].stars = items[idx].stars === s ? 0 : s;
+    if (items[idx].fireId) updateDoc(doc(db,'biblioteca',items[idx].fireId), { stars: items[idx].stars });
+    render(); return;
+  }
+  if (dot) {
+    e.stopPropagation();
+    const idx = parseInt(dot.dataset.idx);
+    const cur = ESTADOS.indexOf(items[idx].estado);
+    items[idx].estado = ESTADOS[(cur+1)%3];
+    if (items[idx].fireId) updateDoc(doc(db,'biblioteca',items[idx].fireId), { estado: items[idx].estado });
+    render(); return;
+  }
+  if (btnEdit) {
+    e.stopPropagation();
+    const idx = parseInt(btnEdit.dataset.idx);
+    window.abrirEditar(idx); return;
+  }
+  if (btnDel) {
+    e.stopPropagation();
+    const idx = parseInt(btnDel.dataset.idx);
+    if (!confirm(`¿Eliminar "${items[idx].titulo}"?`)) return;
+    const fireId = items[idx].fireId;
+    items.splice(idx,1);
+    if (fireId) deleteDoc(doc(db,'biblioteca',fireId));
+    render(); return;
+  }
+});
+
+// Modal
+window.abrirModal = function(limpiar=true) {
+  if (limpiar) {
+    editIdx=null;
+    document.getElementById('modal-titulo-h').textContent='Agregar título';
+    document.getElementById('m-titulo').value='';
+    document.getElementById('m-portada').value='';
+    document.getElementById('m-tipo').value='Pelicula';
+    document.getElementById('m-estado').value='Pendiente';
+    document.getElementById('m-stars').value='';
+    document.getElementById('m-notas').value='';
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+window.abrirEditar = function(idx) {
+  editIdx=idx;
+  const it=items[idx];
+  document.getElementById('modal-titulo-h').textContent='Editar título';
+  document.getElementById('m-titulo').value=it.titulo;
+  document.getElementById('m-portada').value=it.portada||'';
+  document.getElementById('m-tipo').value=it.tipo;
+  document.getElementById('m-estado').value=it.estado;
+  document.getElementById('m-stars').value=it.stars||'';
+  document.getElementById('m-notas').value=it.notas||'';
+  document.getElementById('modal').classList.add('open');
+}
+
+document.getElementById('btn-cancelar').addEventListener('click', () => document.getElementById('modal').classList.remove('open'));
+
+document.getElementById('btn-guardar').addEventListener('click', async () => {
+  const titulo=document.getElementById('m-titulo').value.trim();
+  if (!titulo) return;
+  const entry = {
+    titulo,
+    portada: document.getElementById('m-portada').value.trim(),
+    tipo:    document.getElementById('m-tipo').value,
+    estado:  document.getElementById('m-estado').value,
+    stars:   parseInt(document.getElementById('m-stars').value)||0,
+    notas:   document.getElementById('m-notas').value.trim(),
+  };
+  if (editIdx !== null) {
+    const fireId = items[editIdx].fireId;
+    if (fireId) await updateDoc(doc(db,'biblioteca',fireId), entry);
+  } else {
+    await addDoc(col, entry);
+  }
+  // onSnapshot se encarga de actualizar items y render()
+  document.getElementById('modal').classList.remove('open');
+});
+
+function render() {
+  const idxMap = {}; // mapea índice filtrado → índice real
+  const lista = filtro==='todos'
+    ? items.map((it,i)=>({it,i}))
+    : items.map((it,i)=>({it,i})).filter(({it})=>it.tipo===filtro||it.estado===filtro);
+
+  const grid=document.getElementById('grid');
+  grid.innerHTML = lista.map(({it,i}) => {
+    const bg=bgMap[it.tipo]||['#2a2a2a','#1a1a1a'];
+    return `<div class="card">
+      <div class="estado-dot ${estadoClass(it.estado)}" data-idx="${i}" title="Clic para cambiar estado"></div>
+      <button class="btn-edit" data-idx="${i}" style="position:absolute;top:8px;left:8px;background:none;border:none;padding:0;cursor:pointer;color:rgba(255,255,255,0.4);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+      ${it.portada
+        ? `<img class="poster" src="${it.portada}" alt="${it.titulo}"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+           <div class="poster-placeholder" style="display:none;background:linear-gradient(160deg,${bg[0]},${bg[1]})">
+             <span style="font-size:2rem">${iconMap[it.tipo]||'📖'}</span>
+             <span style="text-align:center;padding:0 8px;font-size:11px;color:#888">${it.titulo}</span>
+           </div>`
+        : `<div class="poster-placeholder" style="background:linear-gradient(160deg,${bg[0]},${bg[1]})">
+             <span style="font-size:2rem">${iconMap[it.tipo]||'📖'}</span>
+             <span style="text-align:center;padding:0 8px;font-size:11px;color:#888">${it.titulo}</span>
+           </div>`
+      }
+      <div class="card-info">
+        <div class="card-titulo" title="${it.titulo}">${it.titulo}</div>
+        <div class="card-meta">
+          <span class="badge b-${it.tipo.toLowerCase()}">${it.tipo}</span>
+        </div>
+        <div class="stars-row">${starsHtml(it.stars||0, i)}</div>
+        <button class="btn-del" data-idx="${i}">×</button>
+      </div>
+    </div>`;
+  }).join('') + `<button class="card-add" onclick="abrirModal()">
+    <span style="font-size:1.4rem">+</span>
+    <span>Agregar</span>
+  </button>`;
+}
+
+
+document.getElementById('hub-logout').addEventListener('click', async () => {
+  try { await signOut(getAuth(app)); } catch (e) {}
+  window.location.href = 'index.html';
+});
+
+// Suscripción en tiempo real, solo con sesión válida
+protegerPagina(async () => {
+  await migrarBiblioteca();
+  onSnapshot(query(col, orderBy('titulo')), snap => {
+    items = snap.docs.map(d => ({ fireId: d.id, ...d.data() }));
+    render();
+  }, err => aviso(err.code === 'permission-denied'
+      ? 'Sin permiso: agrega la colección "biblioteca" a las reglas de Firestore.'
+      : 'Sin conexión: ' + err.message));
+});
+</script>
+</body>
+</html>
